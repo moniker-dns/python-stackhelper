@@ -1,6 +1,14 @@
 # Useful OpenStack Helper Commands
 
-## Security Group Synchronization
+## Install
+
+~~~
+pip install stackhelper
+~~~
+
+## Usage:
+
+### Security Group Synchronization
 
 ~~~
 $ stackhelper secgroup-sync --secgroup-json secgroups.example.json
