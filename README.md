@@ -3,7 +3,7 @@
 ## Install
 
 ~~~
-pip install stackhelper
+pip install python-stackhelper
 ~~~
 
 ## Usage:
