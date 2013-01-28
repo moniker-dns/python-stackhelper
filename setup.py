@@ -34,7 +34,7 @@ setup(
     description='OpenStack Helper Utilities',
     author='Kiall Mac Innes',
     author_email='kiall@hp.com',
-    url='https://launchpad.net/python-stackhelper',
+    url='https://github.com/moniker-dns/python-stackhelper',
     packages=find_packages(exclude=['bin']),
     include_package_data=True,
     test_suite='nose.collector',
