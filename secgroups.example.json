@@ -1,0 +1,50 @@
+{
+    "groups": {
+        "default": {
+            "description": "default",
+            "rules": []
+        },
+        "chef": {
+            "description": "Chef Servers",
+            "rules": [{
+                "description": "Apt Servers -> Chef Service",
+                "ip_protocol": "tcp",
+                "from_port": 4000,
+                "to_port": 4000,
+                "group": "apt"
+            }, {
+                "description": "HAProxy Servers -> Chef Service",
+                "ip_protocol": "tcp",
+                "from_port": 4000,
+                "to_port": 4000,
+                "group": "haproxy"
+            }]
+        },
+        "apt": {
+            "description": "Apt Servers",
+            "rules": [{
+                "description": "Chef Servers -> Apt Repository",
+                "ip_protocol": "tcp",
+                "from_port": 80,
+                "to_port": 80,
+                "group": "chef"
+            }, {
+                "description": "HAProxy Servers -> Apt Repository",
+                "ip_protocol": "tcp",
+                "from_port": 80,
+                "to_port": 80,
+                "group": "haproxy"
+            }]
+        },
+        "haproxy": {
+            "description": "HAProxy Servers",
+            "rules": [{
+                "description": "Everyone -> HAProxy Service",
+                "ip_protocol": "tcp",
+                "from_port": 443,
+                "to_port": 443,
+                "cidr": "0.0.0.0/0"
+            }]
+        }
+    }
+}
