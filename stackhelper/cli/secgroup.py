@@ -83,8 +83,11 @@ class SecgroupSyncCommand(base.Command):
             # Delete out of date rules
             for server_rule in server_rules:
                 if not self._config_has_rule(server_group_ids, config_rules, server_rule):
-                    LOG.warn("Deleting rule '%s' from group '%s'" %
-                        (server_rule['id'], group.name))
+                    LOG.info("Delete rule ALLOW %s/%s-%s in group '%s'" %
+                            (server_rule['ip_protocol'],
+                             server_rule['from_port'],
+                             server_rule['to_port'],
+                             server_group.name))
 
                     if not dry_run:
                         self.novaclient.security_group_rules.delete(server_rule['id'])
