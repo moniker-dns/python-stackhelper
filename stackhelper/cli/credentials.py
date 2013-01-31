@@ -70,14 +70,32 @@ class CredentialsCommand(base.Command):
         except keyring.backend.PasswordSetError:
             LOG.warning('Unable to save password in keyring')
 
-        environment = {}
+        environment = {
+            'OS_AUTH_URL': None,
+            'OS_USERNAME': None,
+            'OS_PASSWORD': None,
+            'OS_TENANT_ID': None,
+            'OS_TENANT_NAME': None,
+            'OS_SERVICE_TOKEN': None,
+            'OS_REGION_NAME': None
+        }
+
         environment.update(service['environment'])
         environment.update(region['environment'])
         environment.update(account['environment'])
         environment['OS_PASSWORD'] = password
 
         for key, value in environment.items():
-            if value:
-                print "export %s='%s'" % (key, value)
-            else:
-                print "unset %s" % (key)
+            if value is None:
+                continue
+
+            print "export %s=%s" % (key, self.escape(value))
+
+    def escape(self, value):
+        """ How does python not have this built in??? """
+        value = value.replace('`', '\`')
+        value = value.replace('"', '\"')
+        value = value.replace('$', '\$')
+        value = value.replace('(', '\(')
+        value = value.replace(')', '\)')
+        return value
