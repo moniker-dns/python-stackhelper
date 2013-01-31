@@ -27,9 +27,9 @@ class StackHelperShell(App):
             command_manager=CommandManager('stackhelper.cli'),
         )
 
-    def build_option_parser(self, description, version, argparse_kwargs=None):
+    def build_option_parser(self, description, version):
         parser = super(StackHelperShell, self).build_option_parser(
-            description, version, argparse_kwargs)
+            description, version)
 
         parser.add_argument('--os-auth-url',
                             default=os.environ.get('OS_AUTH_URL'),

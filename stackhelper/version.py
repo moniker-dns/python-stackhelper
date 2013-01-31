@@ -15,4 +15,4 @@
 # under the License.
 from stackhelper.openstack.common import version as common_version
 
-version_info = common_version.VersionInfo('stackhelper', 'python-stackhelper')
+version_info = common_version.VersionInfo('python-stackhelper')
