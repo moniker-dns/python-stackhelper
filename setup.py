@@ -50,6 +50,7 @@ setup(
     entry_points=textwrap.dedent("""
         [stackhelper.cli]
         secgroup-sync = stackhelper.cli.secgroup:SecgroupSyncCommand
+        credentials = stackhelper.cli.credentials:CredentialsCommand
         """),
     classifiers=[
         'Development Status :: 3 - Alpha',

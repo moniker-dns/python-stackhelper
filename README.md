@@ -32,3 +32,27 @@ $ nova secgroup-add-rule chef tcp 100 200 0.0.0.0/0
 $ stackhelper secgroup-sync --secgroup-json secgroups.example.json
 Delete rule ALLOW tcp/100-200 in group 'chef'
 ~~~
+
+# Credential Management
+
+No OS_ vars
+~~~
+$ env | grep OS_
+$
+~~~
+
+Run stackhelper (inside backticks)
+~~~
+$ `stackhelper credentials hpcloud az1 exampleuser`
+~~~
+
+Check the OS_ env var's again:
+~~~
+$ env | grep OS_
+OS_REGION_NAME='az-1.region-b.geo-1'
+OS_TENANT_ID='...'
+OS_PASSWORD='...'
+OS_AUTH_URL='...'
+OS_USERNAME='...'
+OS_TENANT_NAME='...'
+~~~
