@@ -15,6 +15,7 @@
 # under the License.
 import logging
 import json
+import copy
 from stackhelper.cli import base
 
 LOG = logging.getLogger(__name__)
@@ -27,15 +28,12 @@ class SecgroupSyncCommand(base.Command):
         parser = super(SecgroupSyncCommand, self).get_parser(prog_name)
 
         parser.add_argument('--secgroup-json', help="Path to security group JSON", required=True)
+        parser.add_argument('--additional-group-json', help="Path to security group additional IPs JSON")  # What a name...
 
         return parser
 
     def execute(self, parsed_args):
-        dry_run = self.app.options.dry_run
-
-        # Load The Config File
-        with file(parsed_args.secgroup_json) as fh:
-            config = json.load(fh)
+        config = self._parse_configuration(parsed_args)
 
         # Grab the list of currently active groups from nova
         config_groups = config['groups']
@@ -48,9 +46,7 @@ class SecgroupSyncCommand(base.Command):
 
         for group in delete_groups:
             LOG.warn('Deleting group: %s' % group.name)
-
-            if not dry_run:
-                self.novaclient.security_groups.delete(group)
+            self.novaclient.security_groups.delete(group)
 
         # Refresh the list of groups
         server_groups = self.novaclient.security_groups.list()
@@ -64,9 +60,7 @@ class SecgroupSyncCommand(base.Command):
             group_config = config_groups[group_name]
 
             LOG.info('Creating group: %s' % group_name)
-
-            if not dry_run:
-                self.novaclient.security_groups.create(group_name, group_config['description'])
+            self.novaclient.security_groups.create(group_name, group_config['description'])
 
         # Refresh the list of groups
         server_groups = self.novaclient.security_groups.list()
@@ -89,8 +83,7 @@ class SecgroupSyncCommand(base.Command):
                              server_rule['to_port'],
                              server_group.name))
 
-                    if not dry_run:
-                        self.novaclient.security_group_rules.delete(server_rule['id'])
+                    self.novaclient.security_group_rules.delete(server_rule['id'])
 
             # Create missing rules
             for config_rule in config_rules:
@@ -116,14 +109,44 @@ class SecgroupSyncCommand(base.Command):
                              cidr,
                              server_group.name))
 
-                    if not dry_run:
-                        self.novaclient.security_group_rules.create(
-                            server_group.id,
-                            config_rule['ip_protocol'],
-                            config_rule['from_port'],
-                            config_rule['to_port'],
-                            cidr,
-                            group_id)
+                    self.novaclient.security_group_rules.create(
+                        server_group.id,
+                        config_rule['ip_protocol'],
+                        config_rule['from_port'],
+                        config_rule['to_port'],
+                        cidr,
+                        group_id)
+
+    def _parse_configuration(self, parsed_args):
+        # Read the main config file
+        with open(parsed_args.secgroup_json) as fh:
+            config = json.load(fh)
+
+        # Load up the group additions
+        additional_group_ips = {}
+
+        if parsed_args.additional_group_json:
+            with open(parsed_args.additional_group_json) as fh:
+                additional_group_ips = json.load(fh)
+
+            # Inject rules for each of the additional group IPs
+            for group in config['groups']:
+                # print group
+                # import sys
+                # sys.exit(1)
+                additional_rules = []
+
+                for rule in config['groups'][group]['rules']:
+                    if 'group' in rule and rule['group'] in additional_group_ips:
+                        for ip in additional_group_ips[group]:
+                            new_rule = copy.copy(rule)
+                            del new_rule['group']
+                            new_rule['cidr'] = '%s/32' % ip
+                            additional_rules.append(new_rule)
+
+                config['groups'][group]['rules'].extend(additional_rules)
+
+        return config
 
     def _server_has_rule(self, server_group_ids, server_rules, config_rule):
         for server_rule in server_rules:
