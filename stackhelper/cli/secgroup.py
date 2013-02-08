@@ -131,14 +131,11 @@ class SecgroupSyncCommand(base.Command):
 
             # Inject rules for each of the additional group IPs
             for group in config['groups']:
-                # print group
-                # import sys
-                # sys.exit(1)
                 additional_rules = []
 
                 for rule in config['groups'][group]['rules']:
                     if 'group' in rule and rule['group'] in additional_group_ips:
-                        for ip in additional_group_ips[group]:
+                        for ip in additional_group_ips[rule['group']]:
                             new_rule = copy.copy(rule)
                             del new_rule['group']
                             new_rule['cidr'] = '%s/32' % ip
