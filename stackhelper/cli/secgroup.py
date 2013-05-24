@@ -29,6 +29,7 @@ class SecgroupSyncCommand(base.Command):
 
         parser.add_argument('--secgroup-json', help="Path to security group JSON", required=True)
         parser.add_argument('--additional-group-json', help="Path to security group additional IPs JSON")  # What a name...
+        parser.add_argument('--skip-deletes', help="skip and group/rule deletes", action="store_true")
 
         return parser
 
@@ -45,8 +46,11 @@ class SecgroupSyncCommand(base.Command):
         delete_groups = [group for group in server_groups if group.name not in config_group_names]
 
         for group in delete_groups:
-            LOG.warn('Deleting group: %s' % group.name)
-            self.novaclient.security_groups.delete(group)
+            if parsed_args.skip_deletes:
+                LOG.warn('SKIPPING Deleting group: %s' % group.name)
+            else:
+                LOG.warn('Deleting group: %s' % group.name)
+                self.novaclient.security_groups.delete(group)
 
         # Refresh the list of groups
         server_groups = self.novaclient.security_groups.list()
@@ -77,13 +81,17 @@ class SecgroupSyncCommand(base.Command):
             # Delete out of date rules
             for server_rule in server_rules:
                 if not self._config_has_rule(server_group_ids, config_rules, server_rule):
-                    LOG.info("Delete rule ALLOW %s/%s-%s in group '%s'" %
+                    log_msg = ("SKIPPING Delete rule ALLOW %s/%s-%s in group '%s'" %
                             (server_rule['ip_protocol'],
                              server_rule['from_port'],
                              server_rule['to_port'],
                              server_group.name))
 
-                    self.novaclient.security_group_rules.delete(server_rule['id'])
+                    if parsed_args.skip_deletes:
+                        LOG.info("SKIPPING %s" % log_msg)
+                    else:
+                        LOG.info(log_msg)
+                        self.novaclient.security_group_rules.delete(server_rule['id'])
 
             # Create missing rules
             for config_rule in config_rules:
