@@ -81,7 +81,7 @@ class SecgroupSyncCommand(base.Command):
             # Delete out of date rules
             for server_rule in server_rules:
                 if not self._config_has_rule(server_group_ids, config_rules, server_rule):
-                    log_msg = ("SKIPPING Delete rule ALLOW %s/%s-%s in group '%s'" %
+                    log_msg = ("Delete rule ALLOW %s/%s-%s in group '%s'" %
                             (server_rule['ip_protocol'],
                              server_rule['from_port'],
                              server_rule['to_port'],
