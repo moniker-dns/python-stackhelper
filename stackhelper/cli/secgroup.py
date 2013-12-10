@@ -30,7 +30,7 @@ class SecgroupSyncCommand(base.Command):
         parser.add_argument('--secgroup-json', help="Path to security group JSON", required=True)
         parser.add_argument('--additional-group-json', help="Path to security group additional IPs JSON")  # What a name...
         parser.add_argument('--skip-deletes', help="skip and group/rule deletes", action="store_true")
-
+        parser.add_argument('--simulate', help="skip and group/rule deletes", action="store_true")
         return parser
 
     def execute(self, parsed_args):
@@ -42,11 +42,14 @@ class SecgroupSyncCommand(base.Command):
         server_groups = self.novaclient.security_groups.list()
         server_group_names = [group.name for group in server_groups]
 
+        if parsed_args.simulate:
+            LOG.warn('**** DRY RUN ****')
+
         # First up, delete un-necessary groups.
         delete_groups = [group for group in server_groups if group.name not in config_group_names]
 
         for group in delete_groups:
-            if parsed_args.skip_deletes:
+            if parsed_args.skip_deletes or parsed_args.simulate:
                 LOG.warn('SKIPPING Deleting group: %s' % group.name)
             else:
                 LOG.warn('Deleting group: %s' % group.name)
@@ -64,7 +67,8 @@ class SecgroupSyncCommand(base.Command):
             group_config = config_groups[group_name]
 
             LOG.info('Creating group: %s' % group_name)
-            self.novaclient.security_groups.create(group_name, group_config['description'])
+            if not parsed_args.simulate:
+                self.novaclient.security_groups.create(group_name, group_config['description'])
 
         # Refresh the list of groups
         server_groups = self.novaclient.security_groups.list()
@@ -87,7 +91,7 @@ class SecgroupSyncCommand(base.Command):
                              server_rule['to_port'],
                              server_group.name))
 
-                    if parsed_args.skip_deletes:
+                    if parsed_args.skip_deletes or parsed_args.simulate:
                         LOG.info("SKIPPING %s" % log_msg)
                     else:
                         LOG.info(log_msg)
@@ -100,7 +104,8 @@ class SecgroupSyncCommand(base.Command):
                     group_id = None
 
                     if config_rule.get('group'):
-                        group_id = server_group_ids[config_rule['group']]
+                        if not parsed_args.simulate:
+                            group_id = server_group_ids[config_rule['group']]
                         LOG.info("Create rule ALLOW %s/%s-%s FROM '%s' in group '%s'" %
                             (config_rule['ip_protocol'],
                              config_rule['from_port'],
@@ -117,13 +122,14 @@ class SecgroupSyncCommand(base.Command):
                              cidr,
                              server_group.name))
 
-                    self.novaclient.security_group_rules.create(
-                        server_group.id,
-                        config_rule['ip_protocol'],
-                        config_rule['from_port'],
-                        config_rule['to_port'],
-                        cidr,
-                        group_id)
+                    if not parsed_args.simulate:
+                        self.novaclient.security_group_rules.create(
+                            server_group.id,
+                            config_rule['ip_protocol'],
+                            config_rule['from_port'],
+                            config_rule['to_port'],
+                            cidr,
+                            group_id)
 
     def _parse_configuration(self, parsed_args):
         # Read the main config file
